@@ -1,0 +1,90 @@
+% Ejemplo factorizacion LU
+% Defina matriz
+A = [2 1 1 0; 4 3 3 1; 8 7 9 5; 6 7 9 8];
+% Calcule tres factorizaciones
+[L0,U0,P0] = lu(A); % MATLAB
+[L1,U1]    = lu1(A); % sin pivoteo
+[L2,U2,P2] = lu2(A); % con pivoteo
+
+% comparaciones
+norm(A-L1*U1)
+norm(P2*A-L2*U2)
+norm(P0*A-L0*U0)
+
+% considere ahora matriz con entradas aleatorias
+m = 1e4;
+A = rand(m); %rand -> uniforme, randn -> normal
+tic
+[L2,U2,P2] = lu2(A); % con pivoteo
+toc
+tic
+[L0,U0,P0] = lu(A);  % MATLAB
+toc
+
+norm(P0*A-L0*U0)
+norm(P2*A-L2*U2)
+
+% Descomposicion valores singulares
+A = [2 1 1 0; 4 3 3 1; 8 7 9 5];
+[m,n]   = size(A);
+[U,S,V] = svd(A);
+
+norm(A-U*S*V')    % A = USV'
+norm(U*U'-eye(m)) % U unitarias
+norm(V*V'-eye(n)) % V unitarias
+
+% DVS para matrices grandes
+m = 1e3;
+A = rand(m); %rand -> uniforme, randn -> normal
+tic
+[U,S,V] = svd(A);
+toc
+
+norm(A-U*S*V') % A = USV'
+norm(U*U'-eye(m)) % U unitarias
+norm(V*V'-eye(m)) % V unitarias
+
+% Cholesky -> definidas positivas
+m = 100;
+A = rand(m);
+A = (A+A')/2; % forzar simetría
+A = A*A;
+R = chol(A);
+norm(A-R'*R)
+
+%%
+% funciones 
+function [L,U] = lu1(A)
+% Eliminacion Gaussiana sin pivoteo
+m = size(A,1); % m = size(A,2);
+U = A; L = eye(m); 
+for k = 1:m-1
+    for j = k+1:m
+        L(j,k) = U(j,k)/U(k,k);
+        U(j,k:m) = U(j,k:m)-L(j,k)*U(k,k:m);
+    end
+end
+end
+
+function [L,U,P] = lu2(A)
+% Eliminacion Gaussiana con pivoteo
+m = size(A,1); % m = size(A,2);
+U = A; L = eye(m); P = eye(m);
+for k = 1:m-1
+    % intercambio filas
+    [~,i] = max(abs(U(k:m,k)));
+    i = i + k - 1;
+    % intercambio columna k, i 
+    %P(:,k) % columna k
+    %P(:,i) % columna i
+    P([k i],:) = P([i k],:);
+    % U(k,k:m), U(i,k:m)
+    U([k,i],k:m)   = U([i,k],k:m);
+    L([k,i],1:k-1) = L([i,k],1:k-1);
+    %
+    for j = k+1:m
+        L(j,k) = U(j,k)/U(k,k);
+        U(j,k:m) = U(j,k:m)-L(j,k)*U(k,k:m);
+    end
+end
+end
